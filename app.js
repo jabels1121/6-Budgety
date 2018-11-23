@@ -13,6 +13,16 @@ let budgetController = (function () {
         this.value = value;
     };
 
+    // Calculate total incomes or expense
+    let calculateTotal = function(type) {
+          let sum = 0;
+
+          data.allItems[type].forEach(el => {
+              sum += el.value;
+          });
+          data.totals[type] = sum;
+    };
+
     // Private data structure for storing our incomes or expense
     let data = {
         allItems: {
@@ -22,7 +32,9 @@ let budgetController = (function () {
         totals: {
             exp: 0,
             inc: 0
-        }
+        },
+        budget: 0,
+        percentage: -1
     };
 
     return {
@@ -47,6 +59,30 @@ let budgetController = (function () {
             data.allItems[type].push(newItem);
             // Return the new element
             return newItem;
+        },
+        calculateBudget: function () {
+            // calculate total income and expense
+             calculateTotal('inc');
+             calculateTotal('exp');
+            // Calculate the budget: income - expense
+            data.budget = data.totals.inc - data.totals.exp;
+            // calculate the percentage of income that we spent
+            if (data.totals.inc > 0) {
+                data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+            } else {
+                data.percentage = -1;
+            }
+        },
+        getBudget: function() {
+            return {
+                budget: data.budget,
+                totalInc: data.totals.inc,
+                totalExp: data.totals.exp,
+                percentage: data.percentage
+            }
+        },
+        testing: function () {
+            return data;
         }
     };
 
@@ -70,7 +106,7 @@ let UIController = (function () {
             return {
                 type: document.querySelector(DOMstrings.inputType).value, // will be either 'inc' or 'exp' meaning + or -
                 description: document.querySelector(DOMstrings.inputDescription).value,
-                value: document.querySelector(DOMstrings.inputValue).value
+                value: parseFloat(document.querySelector(DOMstrings.inputValue).value)
             }
         },
         // Public function which create new HTML element with data receiving from obj argument and insert him into DOM
@@ -131,22 +167,38 @@ let controller = (function (budgetCtl, UICtrl) {
         });
     };
 
+    let updateBudget = function() {
+        // TODO: 1. Calculate the budget
+        budgetCtl.calculateBudget();
 
+        // TODO: 2. Return the budget
+        let budget = budgetCtl.getBudget();
+
+        // TODO: 3. Display the budget on the UI
+        console.log(budget);
+    };
+
+    // Add new item to the budget controller data structure and update the UI with new data.
     let ctrlAddItem = function () {
         let input, newItem;
         // TODO: 1. Get the field input data
         input = UICtrl.getInput();
 
-        // TODO: 2. Add the item to the budget controller
-        newItem = budgetCtl.addItem(input.type, input.description, input.value);
+        if(input.description !== '' && !isNaN(input.value) && input.value > 0) {
+            // TODO: 2. Add the item to the budget controller
+            newItem = budgetCtl.addItem(input.type, input.description, input.value);
 
-        // TODO: 3. Add the item to the UI
-        UICtrl.addListItem(newItem, input.type);
-        UICtrl.clearFields();
-        // TODO: 4. Calculate the budget
+            // TODO: 3. Add the item to the UI
+            UICtrl.addListItem(newItem, input.type);
 
-        // TODO: 5. Display the budget on the UI
+            // Clear the fields after adding the new item
+            UICtrl.clearFields();
 
+            // Calculate and Update budget
+            updateBudget();
+        } else {
+            UICtrl.clearFields();
+        }
     };
 
     return {
