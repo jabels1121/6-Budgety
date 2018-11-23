@@ -8,13 +8,47 @@ let budgetController = (function () {
 // UI CONTROLLER
 let UIController = (function () {
 
+    let DOMstrings = {
+        inputType: '.add__type',
+        inputDescription: '.add__description',
+        inputValue: '.add__value',
+        addBtn: '.add__btn'
+    };
+
+    return {
+        getInput: function () {
+            return {
+                type: document.querySelector(DOMstrings.inputType).value, // will be either 'inc' or 'exp' meaning + or -
+                inputDescription: document.querySelector(DOMstrings.inputDescription).value,
+                inputValue: document.querySelector(DOMstrings.inputValue).value
+            }
+        },
+        getDOMstrings: function () {
+            return DOMstrings;
+        }
+    }
+
 })();
 
 // GLOBAL APP CONTROLLER
 let controller = (function (budgetCtl, UICtrl) {
 
-    let ctrlAddItem = function() {
+    let setupEventListeners = function() {
+        let DOM = UICtrl.getDOMstrings();
+
+        document.querySelector(DOM.addBtn).addEventListener('click', ctrlAddItem);
+
+        document.addEventListener('keypress', function (event) {
+            if (event.code === 'Enter' || event.which === 13) {
+                ctrlAddItem();
+            }
+        });
+    };
+
+
+    let ctrlAddItem = function () {
         // TODO: 1. Get the field input data
+        let input = UICtrl.getInput();
 
         // TODO: 2. Add the item to the budget controller
 
@@ -24,15 +58,15 @@ let controller = (function (budgetCtl, UICtrl) {
 
         // TODO: 5. Display the budget on the UI
 
-        console.log('some event happens');
     };
 
-    document.querySelector('.add__btn').addEventListener('click', ctrlAddItem);
-
-    document.addEventListener('keypress', function (event) {
-         if (event.keyCode === 13 || event.which === 13) {
-             ctrlAddItem();
-         }
-    });
+    return {
+        init: function () {
+            console.log('app is starting!');
+            setupEventListeners();
+        }
+    };
 
 })(budgetController, UIController);
+
+controller.init();
