@@ -91,6 +91,24 @@ let UIController = (function () {
             // Insert the HTML into the DOM
             document.querySelector(parentElement).insertAdjacentHTML('beforeend', newHtml);
         },
+        // Public method for cleaning all input fields
+        clearFields: function() {
+            let fields, fieldsArr;
+
+            // Find all needed input filed in the DOM and set it into variable
+            fields = document.querySelectorAll(DOMstrings.inputDescription + ', ' + DOMstrings.inputValue);
+
+            // Convert the received list from querySelectorAll to an simple array
+            fieldsArr = Array.prototype.slice.call(fields);
+
+            // Clear all input fields storing in the fieldsArr
+            fieldsArr.forEach(el => {
+                 el.value = '';
+            });
+
+            // Set the focus into the first element in the array
+            fieldsArr[0].focus();
+        },
         getDOMstrings: function () {
             return DOMstrings;
         }
@@ -124,7 +142,7 @@ let controller = (function (budgetCtl, UICtrl) {
 
         // TODO: 3. Add the item to the UI
         UICtrl.addListItem(newItem, input.type);
-
+        UICtrl.clearFields();
         // TODO: 4. Calculate the budget
 
         // TODO: 5. Display the budget on the UI
