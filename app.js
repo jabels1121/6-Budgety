@@ -111,6 +111,18 @@ let budgetController = (function () {
             localStorage.removeItem('budgetData');
             localStorage.setItem('budgetData', JSON.stringify(data));
         },
+        deleteItem: function(type, id) {
+            let ids, index;
+
+            ids = data.allItems[type].map(function (el) {
+                return el.id;
+            });
+            index = ids.indexOf(id);
+
+            if (index !== -1) {
+                data.allItems[type].splice(index, 1);
+            }
+        },
         testing: function () {
             return data;
         }
@@ -132,7 +144,8 @@ let UIController = (function () {
         budgetIncVal: '.budget__income--value',
         budgetExpVal: '.budget__expenses--value',
         budgetExpPercentage: '.budget__expenses--percentage',
-        clearBtn: '.clear__btn'
+        clearBtn: '.clear__btn',
+        container: '.container'
     };
 
     return {
@@ -150,10 +163,10 @@ let UIController = (function () {
             // Create HTML string with placeholder text
             if (type === 'inc') {
                 parentElement = DOMstrings.incomeContainer;
-                html = '<div class="item clearfix" id="%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+                html = '<div class="item clearfix" id="inc-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             } else if (type === 'exp') {
                 parentElement = DOMstrings.expenseContainer;
-                html = '<div class="item clearfix" id="%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+                html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             }
 
             // Replace the placeholder text with some actual data, which we receive from item object
@@ -189,10 +202,9 @@ let UIController = (function () {
             document.querySelector(DOMstrings.budgetExpVal).textContent = obj.totalExp || 0;
             // Find and update expense percentage
             if (obj.percentage === -1) {
-                document.querySelector(DOMstrings.budgetExpPercentage).style.display = 'none';
+                document.querySelector(DOMstrings.budgetExpPercentage).textContent = '---'
             } else {
-                document.querySelector(DOMstrings.budgetExpPercentage).style.display = 'block';
-                document.querySelector(DOMstrings.budgetExpPercentage).textContent = obj.percentage + '%' || 0;
+                document.querySelector(DOMstrings.budgetExpPercentage).textContent = obj.percentage + '%';
             }
         },
         deleteAllItems: function() {
@@ -200,6 +212,14 @@ let UIController = (function () {
             allItems.forEach(el => {
                 el.remove();
             });
+        },
+        deleteItem: function(itemId) {
+            let deleteEl;
+            // find deleting element
+            deleteEl = document.querySelector(`#${itemId}`);
+
+            // remove deleting element from the DOM
+            deleteEl.remove();
         },
         getDOMstrings: function () {
             return DOMstrings;
@@ -221,16 +241,18 @@ let controller = (function (budgetCtl, UICtrl) {
                 ctrlAddItem();
             }
         });
+
+        document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
     };
 
     let updateBudget = function () {
-        // TODO: 1. Calculate the budget
+        // 1. Calculate the budget
         budgetCtl.calculateBudget();
 
-        // TODO: 2. Return the budget
+        // 2. Return the budget
         let budget = budgetCtl.getBudget();
 
-        // TODO: 3. Display the budget on the UI
+        // 3. Display the budget on the UI
         UICtrl.displayBudget(budget);
     };
 
@@ -285,6 +307,26 @@ let controller = (function (budgetCtl, UICtrl) {
 
         // display the budget from local storage
         updateBudget();
+    };
+
+    let ctrlDeleteItem = function (event) {
+        let itemID, splitID, type, ID;
+
+        itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+
+        if (itemID) {
+            splitID = itemID.split('-');
+            type = splitID[0];
+            ID = parseInt(splitID[1]);
+            // 1. delete the item from the data structure
+            budgetCtl.deleteItem(type, ID);
+            // 1.1 update the local storage
+            budgetCtl.saveDataToLocalStorage();
+            // 2. delete the item from the UI
+            UICtrl.deleteItem(itemID);
+            // 3. Update and show the new budget
+            updateBudget();
+        }
     };
 
     return {
