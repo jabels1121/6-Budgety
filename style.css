@@ -277,9 +277,9 @@ h2 {
 .unpaid:hover .item__description { font-weight: 900; }
 
 .clear__btn {
-    font-size: 18px;
+    font-size: 17px;
     background: none;
-    border-radius: 10px;
+    border-radius: 7px;
     border-color: #28B9B5;
     border-width: 1px;
     padding: 3px;

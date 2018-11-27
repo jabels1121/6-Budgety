@@ -5,6 +5,27 @@ let budgetController = (function () {
         this.id = id;
         this.description = description;
         this.value = value;
+        this.percentage = -1;
+    };
+
+    /*Expense.prototype.calcPercentage = function (totalInc) {
+        if (totalInc > 0) {
+            this.percentage = Math.round((this.value / totalInc) * 100);
+        } else {
+            this.percentage = -1;
+        }
+    };
+
+    Expense.prototype.getPercentage = function () {
+        return this.percentage;
+    };*/
+
+    let calcPercentage = function (totalInc, expEl) {
+        if (totalInc > 0) {
+            expEl.percentage = Math.round((expEl.value / totalInc) * 100);
+        } else {
+            expEl.percentage = -1;
+        }
     };
 
     let Income = function (id, description, value) {
@@ -73,6 +94,16 @@ let budgetController = (function () {
                 data.percentage = -1;
             }
         },
+        calculatePercentages: function () {
+            data.allItems.exp.forEach(el => {
+                calcPercentage(data.totals.inc, el);
+            });
+        },
+        getPercentages: function () {
+            return data.allItems.exp.map(el => {
+                return el.percentage;
+            });
+        },
         getBudget: function () {
             return {
                 budget: data.budget,
@@ -111,7 +142,7 @@ let budgetController = (function () {
             localStorage.removeItem('budgetData');
             localStorage.setItem('budgetData', JSON.stringify(data));
         },
-        deleteItem: function(type, id) {
+        deleteItem: function (type, id) {
             let ids, index;
 
             ids = data.allItems[type].map(function (el) {
@@ -145,7 +176,8 @@ let UIController = (function () {
         budgetExpVal: '.budget__expenses--value',
         budgetExpPercentage: '.budget__expenses--percentage',
         clearBtn: '.clear__btn',
-        container: '.container'
+        container: '.container',
+        expensesPercLabel: '.item__percentage'
     };
 
     return {
@@ -207,13 +239,41 @@ let UIController = (function () {
                 document.querySelector(DOMstrings.budgetExpPercentage).textContent = obj.percentage + '%';
             }
         },
-        deleteAllItems: function() {
+        displayPercentages: function (percentages) {
+            let allPercLabelEl;
+
+            allPercLabelEl = document.querySelectorAll(DOMstrings.expensesPercLabel);
+
+            allPercLabelEl.forEach((el, index) => {
+                if (percentages[index] > 0) {
+                    el.textContent = percentages[index] + '%';
+                } else {
+                    el.textContent = '---';
+                }
+            })
+            // Custom forEach function for nodeList array
+            /*let nodeListForEach = function (list, callback) {
+                  for (let i = 0; i < list.length; i++) {
+                      callback(list[i], i);
+                  }
+            };
+
+            nodeListForEach(allPercLabelEl, function (el, index) {
+                if (percentages[index] > 0) {
+                    el.textContent = percentages[index] + '%';
+                } else {
+                    el.textContent = '---';
+                }
+            })*/
+
+        },
+        deleteAllItems: function () {
             let allItems = document.querySelectorAll('.item');
             allItems.forEach(el => {
                 el.remove();
             });
         },
-        deleteItem: function(itemId) {
+        deleteListItem: function (itemId) {
             let deleteEl;
             // find deleting element
             deleteEl = document.querySelector(`#${itemId}`);
@@ -256,33 +316,50 @@ let controller = (function (budgetCtl, UICtrl) {
         UICtrl.displayBudget(budget);
     };
 
+    // Update the percentages of all expense items in dependence of total budget
+    let updatePercentages = function () {
+        let percentages;
+        // 1. Calculate percentages
+        budgetCtl.calculatePercentages();
+
+        // 2. Read percentages from the budget controller
+        percentages = budgetCtl.getPercentages();
+
+        // 3. Update the UI with the new percentages
+        UICtrl.displayPercentages(percentages);
+
+    };
+
     // Add new item to the budget controller data structure and update the UI with new data.
     let ctrlAddItem = function () {
         let input, newItem;
-        // TODO: 1. Get the field input data
+        // 1. Get the field input data
         input = UICtrl.getInput();
 
         if (input.description !== '' && !isNaN(input.value) && input.value > 0) {
-            // TODO: 2. Add the item to the budget controller
+            // 2. Add the item to the budget controller
             newItem = budgetCtl.addItem(input.type, input.description, input.value);
 
-            // TODO: 3. Add the item to the UI
+            // 3. Add the item to the UI
             UICtrl.addListItem(newItem, input.type);
 
-            // Clear the fields after adding the new item
+            // 4. Clear the fields after adding the new item
             UICtrl.clearFields();
 
-            // Calculate and Update budget
+            // 5. Calculate and Update budget
             updateBudget();
 
-            // Save new data to local storage
+            // 6. Calculate and update percentages
+            updatePercentages();
+
+            // 7. Save new data to local storage
             budgetCtl.saveDataToLocalStorage();
         } else {
             UICtrl.clearFields();
         }
     };
 
-    let clearAll = function() {
+    let clearAll = function () {
         // Delete all data in budget controller and local storage
         budgetCtl.clearData();
 
@@ -320,12 +397,18 @@ let controller = (function (budgetCtl, UICtrl) {
             ID = parseInt(splitID[1]);
             // 1. delete the item from the data structure
             budgetCtl.deleteItem(type, ID);
-            // 1.1 update the local storage
+
+            // 2. update the local storage
             budgetCtl.saveDataToLocalStorage();
-            // 2. delete the item from the UI
-            UICtrl.deleteItem(itemID);
-            // 3. Update and show the new budget
+
+            // 3. delete the item from the UI
+            UICtrl.deleteListItem(itemID);
+
+            // 4. Update and show the new budget
             updateBudget();
+
+            // 5. Calculate and update percentages
+            updatePercentages();
         }
     };
 
@@ -339,5 +422,5 @@ let controller = (function (budgetCtl, UICtrl) {
 
 })(budgetController, UIController);
 
-// Start the application eventListeners
+// Start the application
 controller.init();
