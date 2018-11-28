@@ -177,7 +177,35 @@ let UIController = (function () {
         budgetExpPercentage: '.budget__expenses--percentage',
         clearBtn: '.clear__btn',
         container: '.container',
-        expensesPercLabel: '.item__percentage'
+        expensesPercLabel: '.item__percentage',
+        dateLabel: '.budget__title--month'
+    };
+
+
+    let formatNumber = function (num, type) {
+        let numSplit, int, dec;
+        /*
+        + or - before number
+        exactly 2 decimal points
+        comma separating the thousand
+
+        2310.4567 -> 2,310.46
+        2000 -> + 2,000.00
+         */
+
+        num = Math.abs(num);
+        num = num.toFixed(2);
+
+        numSplit = num.split('.');
+
+        int = numSplit[0];
+
+        if (int.length > 3) {
+            int = int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, 3);
+        }
+        dec = numSplit[1];
+
+        return (type === 'exp' ? '- ' : '+ ') + int + '.' + dec;
     };
 
     return {
@@ -198,11 +226,11 @@ let UIController = (function () {
                 html = '<div class="item clearfix" id="inc-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             } else if (type === 'exp') {
                 parentElement = DOMstrings.expenseContainer;
-                html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">%pers_from_storage%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+                html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             }
 
             // Replace the placeholder text with some actual data, which we receive from item object
-            newHtml = html.replace('%id%', obj.id).replace('%description%', obj.description).replace('%value%', obj.value).replace('%pers_from_storage%', obj.percentage + '%');
+            newHtml = html.replace('%id%', obj.id).replace('%description%', obj.description).replace('%value%', formatNumber(obj.value, type));
 
             // Insert the HTML into the DOM
             document.querySelector(parentElement).insertAdjacentHTML('beforeend', newHtml);
@@ -226,12 +254,15 @@ let UIController = (function () {
             fieldsArr[0].focus();
         },
         displayBudget: function (obj) {
+            let type;
+
+            obj.budget > 0 ? type = 'inc' : type = 'exp';
             // Find and update the budget
-            document.querySelector(DOMstrings.budgetValue).textContent = obj.budget || 0;
+            document.querySelector(DOMstrings.budgetValue).textContent = formatNumber(obj.budget, type);
             // Find and update income
-            document.querySelector(DOMstrings.budgetIncVal).textContent = obj.totalInc || 0;
+            document.querySelector(DOMstrings.budgetIncVal).textContent = formatNumber(obj.totalInc, 'inc');
             // Find and update expense
-            document.querySelector(DOMstrings.budgetExpVal).textContent = obj.totalExp || 0;
+            document.querySelector(DOMstrings.budgetExpVal).textContent = formatNumber(obj.totalExp, 'exp');
             // Find and update expense percentage
             if (obj.percentage === -1) {
                 document.querySelector(DOMstrings.budgetExpPercentage).textContent = '---'
@@ -281,6 +312,28 @@ let UIController = (function () {
             // remove deleting element from the DOM
             deleteEl.remove();
         },
+        displayMonth: function () {
+            let now, year, month, months;
+            now = new Date();
+            year = now.getFullYear();
+            month = now.getMonth();
+            months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            document.querySelector(DOMstrings.dateLabel).textContent = months[month] + ' ' + year;
+        },
+        changedType: function () {
+            let fields;
+
+            fields = document.querySelectorAll(
+                DOMstrings.inputType + ', ' +
+                DOMstrings.inputDescription + ', ' +
+                DOMstrings.inputValue
+            );
+            fields.forEach(el => {
+                el.classList.toggle('red-focus');
+            });
+
+            document.querySelector(DOMstrings.addBtn).classList.toggle('red');
+        },
         getDOMstrings: function () {
             return DOMstrings;
         }
@@ -303,6 +356,7 @@ let controller = (function (budgetCtl, UICtrl) {
         });
 
         document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+        document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changedType);
     };
 
     let updateBudget = function () {
@@ -384,6 +438,9 @@ let controller = (function (budgetCtl, UICtrl) {
 
         // display the budget from local storage
         updateBudget();
+
+        // display the percentages
+        updatePercentages();
     };
 
     let ctrlDeleteItem = function (event) {
@@ -415,6 +472,7 @@ let controller = (function (budgetCtl, UICtrl) {
     return {
         init: function () {
             console.log('app is starting!');
+            UICtrl.displayMonth();
             setupEventListeners();
             initStartingValues();
         }
