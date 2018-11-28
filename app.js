@@ -198,11 +198,11 @@ let UIController = (function () {
                 html = '<div class="item clearfix" id="inc-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             } else if (type === 'exp') {
                 parentElement = DOMstrings.expenseContainer;
-                html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+                html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">%pers_from_storage%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             }
 
             // Replace the placeholder text with some actual data, which we receive from item object
-            newHtml = html.replace('%id%', obj.id).replace('%description%', obj.description).replace('%value%', obj.value);
+            newHtml = html.replace('%id%', obj.id).replace('%description%', obj.description).replace('%value%', obj.value).replace('%pers_from_storage%', obj.percentage + '%');
 
             // Insert the HTML into the DOM
             document.querySelector(parentElement).insertAdjacentHTML('beforeend', newHtml);
